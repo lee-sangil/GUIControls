@@ -1,3 +1,27 @@
+const PARAM = {
+    status_button_size_ratio: 0.3,
+    container_margin: 5,
+    button_margin: 5,
+    alpha_1: 0.2, // hover
+    alpha_2: 0.5, // click
+}
+
+function addPointerInteractionHint(object, active = true) {
+    object.style.backgroundColor = 'rgba(255,255,255,0)';
+    object.onpointerenter = ()=>{
+        if (active) object.style.backgroundColor = 'rgba(255,255,255,' + PARAM.alpha_1 + ')';
+    };
+    object.onpointerleave = ()=>{
+        if (active) object.style.backgroundColor = 'rgba(255,255,255,0)';
+    }
+    object.onpointerdown = ()=>{
+        if (active) object.style.backgroundColor = 'rgba(255,255,255,' + PARAM.alpha_2 + ')';
+    }
+    object.onpointerup = ()=>{
+        if (active) object.style.backgroundColor = 'rgba(255,255,255,' + PARAM.alpha_1 + ')';
+    }
+}
+
 class GUIController {
     constructor(object, property, width) {
         this.alive = true;
@@ -6,26 +30,15 @@ class GUIController {
         this.property = property;
 
         const button = document.createElement('button');
-        button.style.backgroundColor = 'transparent';
+        button.className = 'GUIbutton';
         button.style.border = 'none';
         button.style.width = width + 'px';
         button.style.height = width + 'px';
         button.style.borderRadius = '50%';
-        button.style.margin = '0px 5px 5px 0px';
+        button.style.margin = PARAM.button_margin + 'px 0px 0px 0px';
         button.style.overflow = 'hidden';
         button.draggable = false;
-        button.onpointerenter = ()=>{
-            if (this.alive) button.style.backgroundColor = 'rgba(255,255,255,0.2)';
-        };
-        button.onpointerleave = ()=>{
-            if (this.alive) button.style.backgroundColor = 'rgba(255,255,255,0)';
-        }
-        button.onpointerdown = ()=>{
-            if (this.alive) button.style.backgroundColor = 'rgba(255,255,255,0.5)';
-        }
-        button.onpointerup = ()=>{
-            if (this.alive) button.style.backgroundColor = 'rgba(255,255,255,0.2)';
-        }
+        addPointerInteractionHint(button, this.alive);
         this.button = button;
 
         const img = document.createElement('img');
@@ -58,7 +71,6 @@ class GUIControllerBoolean extends GUIController{
         super(object, property, width);
 
         this.img.src = icon;
-
         this.update();
     }
 
@@ -72,7 +84,7 @@ class GUIControllerBoolean extends GUIController{
         if (this.object[this.property])
             this.img.style.opacity = 1;
         else
-            this.img.style.opacity = 0.2;
+            this.img.style.opacity = PARAM.alpha_1;
     }
 
     onChange(func) {
@@ -92,7 +104,6 @@ class GUIControllerSelect extends GUIController{
         this.key = Object.keys(icon);
         this.index = this.key.indexOf(this.object[this.property]);
         this.length = this.key.length;
-        
         this.update();
     }
 
@@ -108,7 +119,7 @@ class GUIControllerSelect extends GUIController{
             this.img.style.opacity = 1;
             this.img.src = this.icon[this.object[this.property]];
         }else {
-            this.img.style.opacity = 0.2;
+            this.img.style.opacity = PARAM.alpha_1;
         }
     }
 
@@ -129,23 +140,101 @@ class GUIControllerSelect extends GUIController{
 
 export class GUIControls {
     constructor(param) {
+        this.isMinimized = false;
         this.width = param.width;
+        this.height = param.width * PARAM.status_button_size_ratio;
+        this.pts_x = 0;
+        this.pts_y = 0;
+        this.move_x = 0;
+        this.move_y = 0;
+        this.top = 0.5 * window.innerHeight;
+        this.right = 5;
+        this.ispointerdown = false;
+
         const container = document.createElement('div');
         container.style.position = 'fixed'
-        container.style.top = '50vh';
-        container.style.right = '5px';
-        container.style.width = this.width + 'px';
-        container.style.display = 'flex';
-        container.style.flexDirection = 'column';
-        container.style.justifyContent = 'center';
+        container.style.top = this.top + 'px';
+        container.style.right = this.right + 'px';
+        container.style.width = param.width + 'px';
+        container.style.transition = 'height 0.3s ease, right 0.3s ease';
         container.style.webkitUserSelect = 'none';
         container.style.userSelect = 'none';
-        container.style.transform = 'translate(0%, -50%)';
+        container.style.overflow = 'hidden';
         container.style.backgroundColor = 'rgba(0,0,0,0.2)';
         container.style.borderRadius = param.width * 0.2 + 'px';
         container.style.padding = param.width * 0.1 + 'px';
         container.draggable = false;
         document.body.appendChild(container);
+
+        const window_controller = document.createElement('div');
+        window_controller.addEventListener('pointerdown', (event)=>{
+            this.pts_x = event.clientX;
+            this.pts_y = event.clientY;
+            this.move_x = 0;
+            this.move_y = 0;
+            this.ispointerdown = true;
+            this.container.style.transition = 'height 0.3s ease';
+        });
+        window.addEventListener('pointermove', (event)=>{
+            if (this.ispointerdown) {
+                this.move_x = event.clientX - this.pts_x;
+                this.move_y = event.clientY - this.pts_y;
+                this.pts_x = event.clientX;
+                this.pts_y = event.clientY;
+                this.top += this.move_y;
+                this.right -= this.move_x;
+                this.top = Math.max(Math.min(this.top, window.innerHeight - this.height), 0);
+                this.right = Math.max(Math.min(this.right, window.innerWidth - this.width), 5);
+                this.container.style.top = this.top + 'px';
+                this.container.style.right = this.right + 'px';
+            }
+        });
+        window.addEventListener('pointerup', (event)=>{
+            if (this.ispointerdown) {
+                this.ispointerdown = false;
+                this.right = (this.right > 0.5 * (window.innerWidth - this.width - 5))? window.innerWidth - this.width : 5;
+                this.container.style.right = this.right + 'px';
+                this.container.style.transition = 'height 0.3s ease, right 0.3s ease';
+            }
+        });
+
+        const minimize_button = document.createElement('div');
+        minimize_button.style.position = 'relative';
+        minimize_button.style.left = param.width * 0.2 * 0.6 + 'px';
+        minimize_button.style.height = param.width * PARAM.status_button_size_ratio + 'px';
+        minimize_button.style.width = param.width * PARAM.status_button_size_ratio + 'px';
+        minimize_button.style.borderRadius = '50%';
+        addPointerInteractionHint(minimize_button);
+        minimize_button.addEventListener('click', ()=>{
+            const child = document.getElementsByClassName('GUIbutton');
+            if (this.isMinimized) {
+                for (let i = 0; i < child.length; ++i) {
+                    child[i].style.pointerEvents = 'auto';
+                    container.style.height = this.height + 'px';
+                }
+                this.isMinimized = false;
+            }else {
+                for (let i = 0; i < child.length; ++i) {
+                    child[i].style.pointerEvents = 'none';
+                    container.style.height = (this.width * PARAM.status_button_size_ratio) + 'px';
+                }
+                this.isMinimized = true;
+            }
+        });
+
+        const horizon_bar = document.createElement('div');
+        horizon_bar.style.borderRadius = '2px';
+        horizon_bar.style.position = 'absolute';
+        horizon_bar.style.height = this.width * 0.04 + 'px';
+        horizon_bar.style.width = '60%';
+        horizon_bar.style.backgroundColor = 'white';
+        horizon_bar.style.left = '50%';
+        horizon_bar.style.top = '50%';
+        horizon_bar.style.transform = 'translate(-50%, -50%)';
+
+        minimize_button.appendChild(horizon_bar);
+        window_controller.appendChild(minimize_button);
+        container.appendChild(window_controller);
 
         this.container = container;
         this.controller = [];
@@ -161,6 +250,8 @@ export class GUIControls {
         this.controller[property] = controller;
 
         this.container.appendChild(controller.button);
+        this.height += this.width + PARAM.button_margin;
+        this.container.style.height = this.height + 'px';
         return controller;
     }
 }
