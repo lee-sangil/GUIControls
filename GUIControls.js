@@ -181,10 +181,8 @@ export class GUIControls {
                 this.move_y = event.clientY - this.pts_y;
                 this.pts_x = event.clientX;
                 this.pts_y = event.clientY;
-                this.top += this.move_y;
-                this.right -= this.move_x;
-                this.top = Math.max(Math.min(this.top, window.innerHeight - this.height), 0);
-                this.right = Math.max(Math.min(this.right, window.innerWidth - this.width), 5);
+                this.top = Math.max(Math.min(this.top+this.move_y, window.innerHeight - this.height - 2*PARAM.container_margin), 0);
+                this.right = Math.max(Math.min(this.right-this.move_x, window.innerWidth - this.width - 2*PARAM.container_margin - 5), 5);
                 this.container.style.top = this.top + 'px';
                 this.container.style.right = this.right + 'px';
             }
@@ -192,7 +190,7 @@ export class GUIControls {
         window.addEventListener('pointerup', (event)=>{
             if (this.ispointerdown) {
                 this.ispointerdown = false;
-                this.right = (this.right > 0.5 * (window.innerWidth - this.width - 5))? window.innerWidth - this.width : 5;
+                this.right = (this.right > 0.5 * (window.innerWidth - this.width))? window.innerWidth - this.width - 2*PARAM.container_margin - 5 : 5;
                 this.container.style.right = this.right + 'px';
                 this.container.style.transition = 'height 0.3s ease, right 0.3s ease';
             }
@@ -238,6 +236,11 @@ export class GUIControls {
 
         this.container = container;
         this.controller = [];
+    }
+
+    updateDimension() {
+        this.right = (this.right > 0.5 * (window.innerWidth - this.width))? window.innerWidth - this.width - 2*PARAM.container_margin - 5 : 5;
+        this.container.style.right = this.right + 'px';
     }
 
     add(object, property, icon) {

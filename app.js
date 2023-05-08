@@ -15,6 +15,10 @@ class App{
         gui.add(gui_controls, 'select', {'mode1': './assets/search.png', 'mode2': './assets/padlock.png', 'mode3': './assets/target.png'}).title('Mode').set('mode3').onChange(()=>{
             console.log(gui_controls.select);
         });
+
+        window.addEventListener('resize', ()=>{
+            gui.updateDimension();
+        });
     }
 }
 
