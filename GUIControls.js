@@ -203,22 +203,6 @@ export class GUIControls {
         minimize_button.style.width = param.width * PARAM.status_button_size_ratio + 'px';
         minimize_button.style.borderRadius = '50%';
         addPointerInteractionHint(minimize_button);
-        minimize_button.addEventListener('click', ()=>{
-            const child = document.getElementsByClassName('GUIbutton');
-            if (this.isMinimized) {
-                for (let i = 0; i < child.length; ++i) {
-                    child[i].style.pointerEvents = 'auto';
-                    container.style.height = this.height + 'px';
-                }
-                this.isMinimized = false;
-            }else {
-                for (let i = 0; i < child.length; ++i) {
-                    child[i].style.pointerEvents = 'none';
-                    container.style.height = (this.width * PARAM.status_button_size_ratio) + 'px';
-                }
-                this.isMinimized = true;
-            }
-        });
 
         const horizon_bar = document.createElement('div');
         horizon_bar.style.borderRadius = '2px';
@@ -230,7 +214,38 @@ export class GUIControls {
         horizon_bar.style.top = '50%';
         horizon_bar.style.transform = 'translate(-50%, -50%)';
 
+        const vertical_bar = document.createElement('div');
+        vertical_bar.style.borderRadius = '2px';
+        vertical_bar.style.position = 'absolute';
+        vertical_bar.style.transition = '0.3s';
+        vertical_bar.style.height = this.width * 0.04 + 'px';
+        vertical_bar.style.width = '60%';
+        vertical_bar.style.backgroundColor = 'white';
+        vertical_bar.style.left = '50%';
+        vertical_bar.style.top = '50%';
+        vertical_bar.style.transform = 'translate(-50%, -50%)';
+
+        minimize_button.addEventListener('click', ()=>{
+            const child = document.getElementsByClassName('GUIbutton');
+            if (this.isMinimized) {
+                for (let i = 0; i < child.length; ++i) {
+                    child[i].style.pointerEvents = 'auto';
+                    container.style.height = this.height + 'px';
+                }
+                vertical_bar.style.transform = 'translate(-50%, -50%)';
+                this.isMinimized = false;
+            }else {
+                for (let i = 0; i < child.length; ++i) {
+                    child[i].style.pointerEvents = 'none';
+                    container.style.height = (this.width * PARAM.status_button_size_ratio) + 'px';
+                }
+                vertical_bar.style.transform = 'translate(-50%, -50%) rotate(90deg)';
+                this.isMinimized = true;
+            }
+        });
+
         minimize_button.appendChild(horizon_bar);
+        minimize_button.appendChild(vertical_bar);
         window_controller.appendChild(minimize_button);
         container.appendChild(window_controller);
 
