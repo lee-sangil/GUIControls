@@ -57,11 +57,13 @@ class GUIController {
 
     inactive() {
         this.alive = false;
+        addPointerInteractionHint(this.button, this.alive);
         this.update();
     }
 
     active() {
         this.alive = true;
+        addPointerInteractionHint(this.button, this.alive);
         this.update();
     }
 }
