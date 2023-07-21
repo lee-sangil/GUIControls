@@ -6,7 +6,7 @@ class App{
             'bool': true,
             'select': 'mode1'
         };
-        const gui = new GUIControls({width: 50});
+        const gui = new GUIControls(document.body, {width: 50});
         gui.add(gui_controls, 'bool', './assets/target.png').title('Bool').set(false).onChange(()=>{
             console.log(gui_controls.bool);
             if (gui_controls.bool) gui.controller['select'].inactive();

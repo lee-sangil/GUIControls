@@ -1,5 +1,5 @@
 const PARAM = {
-    status_button_size_ratio: 0.3,
+    status_button_size_ratio: 0.4,
     container_margin: 5,
     button_margin: 5,
     alpha_1: 0.2, // hover
@@ -8,7 +8,7 @@ const PARAM = {
 
 function addPointerInteractionHint(object, active = true) {
     object.style.backgroundColor = 'rgba(255,255,255,0)';
-    object.onpointerenter = ()=>{
+    object.onpointermove = ()=>{
         if (active) object.style.backgroundColor = 'rgba(255,255,255,' + PARAM.alpha_1 + ')';
     };
     object.onpointerleave = ()=>{
@@ -23,8 +23,9 @@ function addPointerInteractionHint(object, active = true) {
 }
 
 class GUIController {
-    constructor(object, property, width) {
+    constructor(object, property, width, autoUpdate) {
         this.alive = true;
+        this.autoUpdate = autoUpdate;
 
         this.object = object;
         this.property = property;
@@ -37,6 +38,7 @@ class GUIController {
         button.style.borderRadius = '50%';
         button.style.margin = PARAM.button_margin + 'px 0px 0px 0px';
         button.style.overflow = 'hidden';
+        button.style.padding = '0px';
         button.draggable = false;
         addPointerInteractionHint(button, this.alive);
         this.button = button;
@@ -69,8 +71,8 @@ class GUIController {
 }
 
 class GUIControllerBoolean extends GUIController{
-    constructor(object, property, icon, width) {
-        super(object, property, width);
+    constructor(object, property, icon, width, autoUpdate) {
+        super(object, property, width, autoUpdate);
 
         this.img.src = icon;
         this.update();
@@ -91,7 +93,7 @@ class GUIControllerBoolean extends GUIController{
 
     onChange(func) {
         this.button.onclick = ()=>{
-            this.set(!this.object[this.property]);
+            if (this.autoUpdate) this.set(!this.object[this.property]);
             func();
         }
         return this;
@@ -99,8 +101,8 @@ class GUIControllerBoolean extends GUIController{
 }
 
 class GUIControllerSelect extends GUIController{
-    constructor(object, property, icon, width) {
-        super(object, property, width);
+    constructor(object, property, icon, width, autoUpdate) {
+        super(object, property, width, autoUpdate);
 
         this.icon = icon;
         this.key = Object.keys(icon);
@@ -128,8 +130,10 @@ class GUIControllerSelect extends GUIController{
     onChange(func) {
         this.button.onclick = ()=>{
             if (this.alive) {
-                ++this.index;
-                if (this.index >= this.length) this.index = 0;
+                if (this.autoUpdate) {
+                    ++this.index;
+                    if (this.index >= this.length) this.index = 0;
+                }
 
                 this.set(Object.keys(this.icon)[this.index]);
 
@@ -141,7 +145,7 @@ class GUIControllerSelect extends GUIController{
 }
 
 export class GUIControls {
-    constructor(param) {
+    constructor(domElement = document.body, param) {
         this.isMinimized = false;
         this.width = param.width;
         this.height = param.width * PARAM.status_button_size_ratio;
@@ -149,7 +153,7 @@ export class GUIControls {
         this.pts_y = 0;
         this.move_x = 0;
         this.move_y = 0;
-        this.top = 0.5 * window.innerHeight;
+        this.top = 0;
         this.right = 5;
         this.ispointerdown = false;
 
@@ -162,11 +166,10 @@ export class GUIControls {
         container.style.webkitUserSelect = 'none';
         container.style.userSelect = 'none';
         container.style.overflow = 'hidden';
-        container.style.backgroundColor = 'rgba(0,0,0,0.2)';
+        container.style.backgroundColor = 'rgba(255,255,255,0.1)';
         container.style.borderRadius = param.width * 0.2 + 'px';
         container.style.padding = param.width * 0.1 + 'px';
         container.draggable = false;
-        document.body.appendChild(container);
 
         const window_controller = document.createElement('div');
         window_controller.addEventListener('pointerdown', (event)=>{
@@ -250,6 +253,7 @@ export class GUIControls {
         minimize_button.appendChild(vertical_bar);
         window_controller.appendChild(minimize_button);
         container.appendChild(window_controller);
+        domElement.appendChild(container);
 
         this.container = container;
         this.controller = [];
@@ -260,12 +264,12 @@ export class GUIControls {
         this.container.style.right = this.right + 'px';
     }
 
-    add(object, property, icon) {
+    add(object, property, icon, autoUpdate = true) {
         let controller;
         if (icon.constructor == Object) { // Finite state menu
-            controller = new GUIControllerSelect(object, property, icon, this.width);
+            controller = new GUIControllerSelect(object, property, icon, this.width, autoUpdate);
         }else { // Turn on/off menu
-            controller = new GUIControllerBoolean(object, property, icon, this.width);
+            controller = new GUIControllerBoolean(object, property, icon, this.width, autoUpdate);
         }
         this.controller[property] = controller;
 
